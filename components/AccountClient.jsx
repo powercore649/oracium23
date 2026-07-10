@@ -55,7 +55,16 @@ export default function AccountClient() {
     [account]
   );
 
-  const totals = useMemo(() => {
+  const exportData = () => {
+    if (!account) return;
+    const blob = new Blob([JSON.stringify(account, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bumpify-mes-donnees-${session?.user?.discordId || 'compte'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
     if (!account?.guilds?.length) return null;
     return account.guilds.reduce(
       (acc, g) => ({
@@ -79,7 +88,7 @@ export default function AccountClient() {
       <div className="empty-state" style={{ maxWidth: 480, margin: '10vh auto', textAlign: 'center' }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>👋</div>
         <p style={{ marginBottom: 16 }}>Connecte-toi avec Discord pour voir ton compte.</p>
-        <button className="filter-chip active" onClick={() => signIn('discord')}>
+        <button className="discord-btn" style={{ margin: '0 auto' }} onClick={() => signIn('discord')}>
           Se connecter avec Discord
         </button>
       </div>
@@ -152,27 +161,32 @@ export default function AccountClient() {
 
       {/* Résumé global */}
       {totals && (
-        <div className="stats-banner" style={{ marginBottom: 32, padding: 0, maxWidth: 'none' }}>
-          <div className="stat-chip">
-            <div className="stat-chip-num">{formatNumber(totals.bumps)}</div>
-            <div className="stat-chip-label">🚀 Bumps au total</div>
+        <div style={{ marginBottom: 32 }}>
+          <div className="stats-banner" style={{ marginBottom: 14, padding: 0, maxWidth: 'none' }}>
+            <div className="stat-chip">
+              <div className="stat-chip-num">{formatNumber(totals.bumps)}</div>
+              <div className="stat-chip-label">🚀 Bumps au total</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-num">{formatNumber(totals.coins)}</div>
+              <div className="stat-chip-label">🪙 Coins au total</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-num">{formatNumber(totals.totalXp)}</div>
+              <div className="stat-chip-label">⚡ XP cumulée</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-num">{totals.bestStreak}</div>
+              <div className="stat-chip-label">🔥 Meilleur streak</div>
+            </div>
+            <div className="stat-chip">
+              <div className="stat-chip-num">{totals.badges}</div>
+              <div className="stat-chip-label">🏅 Badges obtenus</div>
+            </div>
           </div>
-          <div className="stat-chip">
-            <div className="stat-chip-num">{formatNumber(totals.coins)}</div>
-            <div className="stat-chip-label">🪙 Coins au total</div>
-          </div>
-          <div className="stat-chip">
-            <div className="stat-chip-num">{formatNumber(totals.totalXp)}</div>
-            <div className="stat-chip-label">⚡ XP cumulée</div>
-          </div>
-          <div className="stat-chip">
-            <div className="stat-chip-num">{totals.bestStreak}</div>
-            <div className="stat-chip-label">🔥 Meilleur streak</div>
-          </div>
-          <div className="stat-chip">
-            <div className="stat-chip-num">{totals.badges}</div>
-            <div className="stat-chip-label">🏅 Badges obtenus</div>
-          </div>
+          <button className="filter-chip" style={{ fontSize: 12.5 }} onClick={exportData}>
+            ⬇️ Exporter mes données (JSON)
+          </button>
         </div>
       )}
 
@@ -203,7 +217,7 @@ export default function AccountClient() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginTop: 4 }}>
                 <div className="stat-chip">
                   <div className="stat-chip-num">{formatNumber(g.bumps)}</div>
-                  <div className="stat-chip-label">🚀 Bumps</div>
+                  <div className="stat-chip-label">🚀 Bumps {g.rank ? `· #${g.rank}` : ''}</div>
                 </div>
                 <div className="stat-chip">
                   <div className="stat-chip-num">{g.streak}</div>
@@ -218,6 +232,12 @@ export default function AccountClient() {
                   <div className="stat-chip-label">⭐ Réputation</div>
                 </div>
               </div>
+
+              {g.lastBump && (
+                <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 8 }}>
+                  Dernier bump : {new Date(g.lastBump).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              )}
 
               {g.badges?.length > 0 && (
                 <div className="server-tags" style={{ marginTop: 10 }}>

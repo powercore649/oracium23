@@ -8,6 +8,7 @@ export default function ServerDetailClient({ server }) {
   const [voted,      setVoted]      = useState(() => votesStore.hasVoted(server.guildId));
   const [voteCount,  setVoteCount]  = useState(server.totalVotes || 0);
   const [copied,     setCopied]     = useState(false);
+  const [badgeCopied, setBadgeCopied] = useState(false);
 
   const icon = server.guildIcon
     ? `https://cdn.discordapp.com/icons/${server.guildId}/${server.guildIcon}.webp?size=128`
@@ -29,6 +30,15 @@ export default function ServerDetailClient({ server }) {
     await navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const badgeImgUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/badge/${server.guildId}`;
+  const badgeMarkdown = `[![Bumpify](${badgeImgUrl})](${typeof window !== 'undefined' ? window.location.origin : ''}/server/${server.guildId})`;
+
+  const handleCopyBadge = async () => {
+    await navigator.clipboard.writeText(badgeMarkdown).catch(() => {});
+    setBadgeCopied(true);
+    setTimeout(() => setBadgeCopied(false), 2000);
   };
 
   return (
@@ -124,11 +134,29 @@ export default function ServerDetailClient({ server }) {
 
         {/* Langue */}
         {server.language && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-dim)', fontSize: 13.5 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-dim)', fontSize: 13.5, marginBottom: 24 }}>
             <span>🌍</span>
             <span>Langue : <strong style={{ color: 'var(--text)' }}>{server.language.toUpperCase()}</strong></span>
           </div>
         )}
+
+        {/* Badge embarquable */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 10 }}>🏷️ Badge embarquable</div>
+          <p style={{ fontSize: 12.5, color: 'var(--text-dim)', marginBottom: 14 }}>
+            Affiche les stats en direct de ton serveur sur ton propre site ou dans ton README GitHub.
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={badgeImgUrl} alt="Badge Bumpify" style={{ marginBottom: 14, display: 'block' }} />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <code style={{ fontSize: 11.5, background: 'var(--surface-3, #1a1c22)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', color: 'var(--text-dim)', wordBreak: 'break-all' }}>
+              {badgeMarkdown}
+            </code>
+            <button className={`share-btn ${badgeCopied ? 'copied' : ''}`} onClick={handleCopyBadge}>
+              {badgeCopied ? '✅ Copié !' : '📋 Copier (Markdown)'}
+            </button>
+          </div>
+        </div>
       </div>
     </main>
   );
