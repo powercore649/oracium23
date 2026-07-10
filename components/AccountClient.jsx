@@ -65,6 +65,8 @@ export default function AccountClient() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const totals = useMemo(() => {
     if (!account?.guilds?.length) return null;
     return account.guilds.reduce(
       (acc, g) => ({
