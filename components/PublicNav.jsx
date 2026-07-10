@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/new', label: 'Nouveaux' },
   { href: '/stats', label: 'Statistiques' },
   { href: '/templates', label: 'Templates' },
+  { href: '/account', label: 'Mon compte' },
 ];
 
 function AuthButton({ compact = false }) {
