@@ -1,17 +1,33 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
-const LINKS = [
-  { href: '/', label: 'Annuaire' },
-  { href: '/leaderboard', label: 'Classement' },
-  { href: '/trending', label: 'Tendances' },
-  { href: '/new', label: 'Nouveaux' },
-  { href: '/decouverte', label: 'Découverte' },
-  { href: '/stats', label: 'Statistiques' },
-  { href: '/templates', label: 'Templates' },
-  { href: '/faq', label: 'FAQ' },
-  { href: '/account', label: 'Mon compte' },
+const NAV_GROUPS = [
+  {
+    key: 'decouvrir',
+    label: 'Découvrir',
+    icon: '🧭',
+    items: [
+      { href: '/', label: 'Annuaire' },
+      { href: '/leaderboard', label: 'Classement' },
+      { href: '/trending', label: 'Tendances' },
+      { href: '/new', label: 'Nouveaux' },
+      { href: '/decouverte', label: 'Au hasard' },
+      { href: '/stats', label: 'Statistiques' },
+    ],
+  },
+  {
+    key: 'ressources',
+    label: 'Ressources',
+    icon: '📚',
+    items: [
+      { href: '/templates', label: 'Templates' },
+      { href: '/partenaires', label: 'Partenaires' },
+      { href: '/faq', label: 'FAQ' },
+      { href: '/changelog', label: 'Changelog' },
+      { href: '/a-propos', label: 'À propos' },
+    ],
+  },
 ];
 
 function DiscordIcon() {
@@ -24,43 +40,74 @@ function DiscordIcon() {
 
 function AuthButton({ compact = false }) {
   const { data: session, status } = useSession();
-
   if (status === 'loading') return null;
 
   if (session) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {session.user?.image && (
-          <img
-            src={session.user.image}
-            alt=""
-            style={{ width: 24, height: 24, borderRadius: '50%' }}
-          />
+          <img src={session.user.image} alt="" style={{ width: 24, height: 24, borderRadius: '50%' }} />
         )}
         {!compact && (
-          <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
-            {session.user?.name}
-          </span>
+          <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>{session.user?.name}</span>
         )}
         <button className="filter-chip" onClick={() => signOut()}>Déconnexion</button>
       </div>
     );
   }
-
   return (
     <button className="discord-btn" onClick={() => signIn('discord')}>
       <DiscordIcon />
-      Se connecter avec Discord
+      Se connecter
     </button>
   );
 }
 
+function NavDropdown({ group, current, openKey, setOpenKey }) {
+  const ref = useRef(null);
+  const isOpen = openKey === group.key;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onClickOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpenKey(null); };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [isOpen, setOpenKey]);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        className={`filter-chip ${isOpen ? 'active' : ''}`}
+        onClick={() => setOpenKey(isOpen ? null : group.key)}
+        aria-expanded={isOpen}
+      >
+        {group.icon} {group.label} <span style={{ fontSize: 10, opacity: 0.7 }}>{isOpen ? '▲' : '▼'}</span>
+      </button>
+      {isOpen && (
+        <div className="nav-dropdown-panel">
+          {group.items.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={`nav-dropdown-item ${item.href === current ? 'active' : ''}`}
+              onClick={() => setOpenKey(null)}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Barre de navigation partagée par toutes les pages publiques du site.
-// `current` = le chemin de la page en cours, pour ne pas se relier soi-même.
-// En dessous de 760px, les liens passent dans un menu hamburger.
+// v3 : regroupée en menus déroulants (Découvrir / Ressources) au lieu d'une
+// longue liste de liens à plat, pour rester lisible même avec de plus en
+// plus de pages. `current` = chemin de la page en cours.
 export default function PublicNav({ current = '/' }) {
-  const [open, setOpen] = useState(false);
-  const links = LINKS.filter((l) => l.href !== current);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [openKey, setOpenKey] = useState(null);
 
   return (
     <nav className="nav-public">
@@ -69,10 +116,11 @@ export default function PublicNav({ current = '/' }) {
         <span className="version-badge">Bêta 2.1</span>
       </a>
 
-      <div className="nav-links-desktop" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
-        {links.map((l) => (
-          <a key={l.href} href={l.href} className="filter-chip">{l.label}</a>
+      <div className="nav-links-desktop" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+        {NAV_GROUPS.map((group) => (
+          <NavDropdown key={group.key} group={group} current={current} openKey={openKey} setOpenKey={setOpenKey} />
         ))}
+        <a href="/account" className={`filter-chip ${current === '/account' ? 'active' : ''}`}>👤 Mon compte</a>
         <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="live-dot" /> Données en direct
         </span>
@@ -82,18 +130,26 @@ export default function PublicNav({ current = '/' }) {
 
       <button
         className="nav-hamburger"
-        aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+        aria-expanded={mobileOpen}
+        onClick={() => setMobileOpen((v) => !v)}
       >
         <span /><span /><span />
       </button>
 
-      {open && (
+      {mobileOpen && (
         <div className="nav-mobile-panel">
-          {links.map((l) => (
-            <a key={l.href} href={l.href} className="filter-chip" onClick={() => setOpen(false)}>{l.label}</a>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.key} style={{ width: '100%' }}>
+              <div className="nav-mobile-group-label">{group.icon} {group.label}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                {group.items.map((item) => (
+                  <a key={item.href} href={item.href} className="filter-chip" onClick={() => setMobileOpen(false)}>{item.label}</a>
+                ))}
+              </div>
+            </div>
           ))}
+          <a href="/account" className="filter-chip" onClick={() => setMobileOpen(false)}>👤 Mon compte</a>
           <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
             <span className="live-dot" /> Données en direct
           </span>
