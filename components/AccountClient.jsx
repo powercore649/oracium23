@@ -4,11 +4,14 @@ import { useSession, signIn } from 'next-auth/react';
 import LoadingLogo from '@/components/LoadingLogo';
 import { formatNumber } from '@/lib/utils';
 
+const DISCORD_GUILDS_PREVIEW_COUNT = 12;
+
 export default function AccountClient() {
   const { data: session, status } = useSession();
   const [account, setAccount] = useState(null);
   const [error, setError] = useState(null);
   const [lastSync, setLastSync] = useState(null);
+  const [showAllGuilds, setShowAllGuilds] = useState(false);
 
   const load = () => {
     fetch('/api/account', { cache: 'no-store' })
@@ -221,6 +224,45 @@ export default function AccountClient() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Tous les serveurs Discord de l'utilisateur, avec indicateur Bumpify */}
+      {!error && account?.discordGuilds?.length > 0 && (
+        <div style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 14 }}>
+            Tes serveurs Discord ({account.discordGuilds.length})
+          </h2>
+          <div className="directory-list" style={{ padding: 0, maxWidth: 'none', margin: 0 }}>
+            {(showAllGuilds ? account.discordGuilds : account.discordGuilds.slice(0, DISCORD_GUILDS_PREVIEW_COUNT)).map((g) => (
+              <div className="server-row" style={{ cursor: g.onBumpify ? 'pointer' : 'default' }} key={g.guildId}
+                onClick={() => { if (g.onBumpify) window.location.href = `/server/${g.guildId}`; }}
+              >
+                <div className="server-avatar" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
+                  {g.icon ? <img src={g.icon} alt="" /> : g.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="server-row-info">
+                  <div className="server-row-name">{g.name}</div>
+                  {g.owner && <div className="server-row-desc">Tu es propriétaire de ce serveur</div>}
+                </div>
+                <span
+                  className={`filter-chip ${g.onBumpify ? 'active' : ''}`}
+                  style={{ cursor: 'default', flexShrink: 0, fontSize: 11.5, padding: '4px 10px' }}
+                >
+                  {g.onBumpify ? '✅ Sur Bumpify' : 'Pas encore sur Bumpify'}
+                </span>
+              </div>
+            ))}
+          </div>
+          {account.discordGuilds.length > DISCORD_GUILDS_PREVIEW_COUNT && (
+            <button
+              className="filter-chip"
+              style={{ marginTop: 14 }}
+              onClick={() => setShowAllGuilds((v) => !v)}
+            >
+              {showAllGuilds ? 'Réduire' : `Voir les ${account.discordGuilds.length - DISCORD_GUILDS_PREVIEW_COUNT} autres serveurs`}
+            </button>
+          )}
         </div>
       )}
     </div>
