@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import LoadingLogo from '@/components/LoadingLogo';
 import { formatNumber } from '@/lib/utils';
@@ -25,12 +25,29 @@ export default function AccountClient() {
   useEffect(() => {
     if (status !== 'authenticated') return;
     load();
-    // Synchronisation automatique : le bot met à jour ces données en continu
-    // (bumps, XP, coins...), donc on rafraîchit régulièrement plutôt que de
-    // se fier à un chargement unique.
     const interval = setInterval(load, 15000);
     return () => clearInterval(interval);
   }, [status]);
+
+  const sortedGuilds = useMemo(
+    () => account?.guilds ? [...account.guilds].sort((a, b) => b.bumps - a.bumps) : [],
+    [account]
+  );
+
+  const totals = useMemo(() => {
+    if (!account?.guilds?.length) return null;
+    return account.guilds.reduce(
+      (acc, g) => ({
+        bumps: acc.bumps + g.bumps,
+        coins: acc.coins + g.coins,
+        totalXp: acc.totalXp + g.totalXp,
+        reputation: acc.reputation + g.reputation,
+        badges: acc.badges + (g.badges?.length || 0),
+        bestStreak: Math.max(acc.bestStreak, g.streak),
+      }),
+      { bumps: 0, coins: 0, totalXp: 0, reputation: 0, badges: 0, bestStreak: 0 }
+    );
+  }, [account]);
 
   if (status === 'loading') {
     return <LoadingLogo label="Chargement de la session…" />;
@@ -39,6 +56,7 @@ export default function AccountClient() {
   if (status !== 'authenticated') {
     return (
       <div className="empty-state" style={{ maxWidth: 480, margin: '10vh auto', textAlign: 'center' }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>👋</div>
         <p style={{ marginBottom: 16 }}>Connecte-toi avec Discord pour voir ton compte.</p>
         <button className="filter-chip active" onClick={() => signIn('discord')}>
           Se connecter avec Discord
@@ -48,17 +66,30 @@ export default function AccountClient() {
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 6vw 8vh', position: 'relative', zIndex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 6vw 8vh', position: 'relative', zIndex: 1 }}>
+      {/* En-tête profil */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', gap: 18, marginBottom: 28,
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+          padding: '20px 24px', flexWrap: 'wrap',
+        }}
+      >
         {session.user?.image && (
-          <img src={session.user.image} alt="" style={{ width: 56, height: 56, borderRadius: '50%' }} />
+          <img src={session.user.image} alt="" style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--accent)' }} />
         )}
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 20 }}>{session.user?.name}</div>
-          <div className="mono" style={{ fontSize: 12, color: 'var(--text-faint)' }}>
-            {lastSync ? `Synchronisé à l'instant (${lastSync.toLocaleTimeString('fr-FR')})` : 'Synchronisation…'}
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <div style={{ fontWeight: 700, fontSize: 22 }}>{session.user?.name}</div>
+          <div className="mono" style={{ fontSize: 12, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <span className="live-dot" />
+            {lastSync ? `Synchronisé à ${lastSync.toLocaleTimeString('fr-FR')}` : 'Synchronisation…'}
           </div>
         </div>
+        {totals && (
+          <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>
+            Actif sur <strong style={{ color: 'var(--accent)' }}>{account.guilds.length}</strong> serveur{account.guilds.length > 1 ? 's' : ''} du réseau
+          </div>
+        )}
       </div>
 
       {error && (
@@ -71,14 +102,42 @@ export default function AccountClient() {
 
       {!error && account !== null && account.guilds.length === 0 && (
         <div className="empty-state">
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
           Aucune activité détectée sur un serveur du réseau Bumpify pour l'instant.
-          Bump un serveur ou discute un peu pour voir apparaître tes stats ici.
+          <br />Bump un serveur ou discute un peu pour voir apparaître tes stats ici.
         </div>
       )}
 
-      {!error && account?.guilds?.length > 0 && (
+      {/* Résumé global */}
+      {totals && (
+        <div className="stats-banner" style={{ marginBottom: 32, padding: 0, maxWidth: 'none' }}>
+          <div className="stat-chip">
+            <div className="stat-chip-num">{formatNumber(totals.bumps)}</div>
+            <div className="stat-chip-label">🚀 Bumps au total</div>
+          </div>
+          <div className="stat-chip">
+            <div className="stat-chip-num">{formatNumber(totals.coins)}</div>
+            <div className="stat-chip-label">🪙 Coins au total</div>
+          </div>
+          <div className="stat-chip">
+            <div className="stat-chip-num">{formatNumber(totals.totalXp)}</div>
+            <div className="stat-chip-label">⚡ XP cumulée</div>
+          </div>
+          <div className="stat-chip">
+            <div className="stat-chip-num">{totals.bestStreak}</div>
+            <div className="stat-chip-label">🔥 Meilleur streak</div>
+          </div>
+          <div className="stat-chip">
+            <div className="stat-chip-num">{totals.badges}</div>
+            <div className="stat-chip-label">🏅 Badges obtenus</div>
+          </div>
+        </div>
+      )}
+
+      {/* Détail par serveur */}
+      {!error && sortedGuilds.length > 0 && (
         <div className="directory-grid">
-          {account.guilds.map((g) => (
+          {sortedGuilds.map((g) => (
             <div className="server-card" key={g.guildId} style={{ cursor: 'default' }}>
               <div className="server-card-head">
                 <div className="server-avatar">
@@ -86,10 +145,17 @@ export default function AccountClient() {
                     ? <img src={`https://cdn.discordapp.com/icons/${g.guildId}/${g.guildIcon}.png`} alt="" />
                     : g.guildName.slice(0, 2).toUpperCase()}
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div className="server-name">{g.guildName}</div>
-                  <div className="server-meta">Niveau {g.level} · {formatNumber(g.totalXp)} XP</div>
+                  <div className="server-meta">{formatNumber(g.totalXp)} XP</div>
                 </div>
+                <span
+                  className="filter-chip active"
+                  style={{ cursor: 'default', flexShrink: 0, padding: '4px 12px' }}
+                  title="Niveau"
+                >
+                  Niv. {g.level}
+                </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginTop: 4 }}>
@@ -114,12 +180,24 @@ export default function AccountClient() {
               {g.badges?.length > 0 && (
                 <div className="server-tags" style={{ marginTop: 10 }}>
                   {g.badges.map((b) => (
-                    <span key={b.name} className="tag-pill" style={{ borderColor: b.color, color: b.color }}>
+                    <span
+                      key={b.name}
+                      className="tag-pill"
+                      style={{ borderColor: b.color, color: b.color }}
+                      title={b.name}
+                    >
                       {b.emoji} {b.name}
                     </span>
                   ))}
                 </div>
               )}
+
+              <div className="server-footer">
+                <span className="mono" style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+                  {g.weeklyBumps} bump{g.weeklyBumps !== 1 ? 's' : ''} cette semaine
+                </span>
+                <a className="join-btn" href={`/server/${g.guildId}`}>Voir le serveur →</a>
+              </div>
             </div>
           ))}
         </div>
