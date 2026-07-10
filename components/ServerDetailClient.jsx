@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { formatNumber, timeAgo, votes as votesStore } from '@/lib/utils';
 import ReportModal from '@/components/ReportModal';
+import ServerDescription from '@/components/ServerDescription';
 
 export default function ServerDetailClient({ server }) {
   const { data: session, status } = useSession();
@@ -21,6 +22,26 @@ export default function ServerDetailClient({ server }) {
   const [myRating, setMyRating] = useState(0);
   const [myComment, setMyComment] = useState('');
   const [reviewStatus, setReviewStatus] = useState('idle'); // idle | sending | sent | error
+
+  // Serveurs similaires (basé sur les tags en commun)
+  const [similarServers, setSimilarServers] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/servers', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!Array.isArray(data)) return;
+        const myTags = new Set(server.tags || []);
+        const scored = data
+          .filter((s) => s.guildId !== server.guildId)
+          .map((s) => ({ ...s, shared: (s.tags || []).filter((t) => myTags.has(t)).length }))
+          .filter((s) => s.shared > 0)
+          .sort((a, b) => b.shared - a.shared || b.bumpCount - a.bumpCount)
+          .slice(0, 3);
+        setSimilarServers(scored);
+      })
+      .catch(() => setSimilarServers([]));
+  }, [server.guildId, server.tags]);
 
   useEffect(() => {
     fetch(`/api/reviews/${server.guildId}`, { cache: 'no-store' })
@@ -116,9 +137,9 @@ export default function ServerDetailClient({ server }) {
               {server.trending && <span className="trending-badge">🔥 Trending</span>}
               {server.isNew    && <span className="new-badge">✨ Nouveau</span>}
             </div>
-            <p style={{ color: 'var(--text-dim)', fontSize: 14, lineHeight: 1.6, marginBottom: 16, maxWidth: 540 }}>
-              {server.description || 'Aucune description.'}
-            </p>
+            {server.description
+              ? <div style={{ marginBottom: 16, maxWidth: 540 }}><ServerDescription text={server.description} /></div>
+              : <p style={{ color: 'var(--text-dim)', fontSize: 14, marginBottom: 16 }}>Aucune description.</p>}
             {(server.tags || []).length > 0 && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
                 {server.tags.map(t => (
@@ -141,6 +162,15 @@ export default function ServerDetailClient({ server }) {
               <button className={`share-btn ${copied ? 'copied' : ''}`} onClick={handleShare}>
                 {copied ? '✅ Lien copié !' : '🔗 Partager'}
               </button>
+              <a
+                className="share-btn"
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Découvre ${server.guildName} sur Bumpify Directory 🚀`)}&url=${encodeURIComponent(`https://zyntra.dpdns.org/server/${server.guildId}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
+              >
+                𝕏 Partager
+              </a>
               <button className="share-btn" onClick={() => setReportOpen(true)} style={{ marginLeft: 'auto' }}>
                 🚩 Signaler
               </button>
@@ -213,6 +243,33 @@ export default function ServerDetailClient({ server }) {
             </button>
           </div>
         </div>
+
+        {/* Serveurs similaires */}
+        {similarServers?.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 12 }}>🧭 Serveurs similaires</div>
+            <div className="directory-grid" style={{ padding: 0 }}>
+              {similarServers.map((s) => (
+                <a key={s.guildId} href={`/server/${s.guildId}`} className="server-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="server-card-head">
+                    <div className="server-avatar">
+                      {s.icon
+                        ? <img src={`https://cdn.discordapp.com/icons/${s.guildId}/${s.icon}.png`} alt="" />
+                        : s.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="server-name">{s.name}</div>
+                      <div className="server-meta">{s.memberCount ?? '—'} membres</div>
+                    </div>
+                  </div>
+                  <div className="server-tags">
+                    {s.tags.slice(0, 3).map((t) => <span className="tag-pill" key={t}>{t}</span>)}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Avis et notes */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 20, marginTop: 20 }}>

@@ -1,4 +1,5 @@
 'use client';
+import ServerDescription from '@/components/ServerDescription';
 
 function timeAgo(dateStr) {
   if (!dateStr) return 'jamais';
@@ -32,7 +33,7 @@ export default function ServerModal({ server, onClose }) {
           </div>
         </div>
 
-        {server.description && <p className="modal-desc">{server.description}</p>}
+        {server.description && <div className="modal-desc"><ServerDescription text={server.description} compact /></div>}
 
         {server.tags?.length > 0 && (
           <div className="server-tags" style={{ marginBottom: 18 }}>

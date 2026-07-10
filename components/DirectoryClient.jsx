@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ServerModal from '@/components/ServerModal';
 import LoadingLogo from '@/components/LoadingLogo';
-import { favorites, searchHistory } from '@/lib/utils';
+import { favorites, searchHistory, stripMarkdown } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/categories';
 import ReportModal from '@/components/ReportModal';
 import RatingBadge from '@/components/RatingBadge';
@@ -184,7 +184,7 @@ export default function DirectoryClient({ initialServers = null, hideBanner = fa
                 {favIds.includes(s.guildId) ? '★' : '☆'}
               </button>
             </div>
-            {s.description && <p className="server-desc">{s.description}</p>}
+            {s.description && <p className="server-desc">{stripMarkdown(s.description)}</p>}
             {s.tags?.length > 0 && (
               <div className="server-tags">
                 {s.tags.slice(0, 4).map((t) => <span className="tag-pill" key={t}>{t}</span>)}
