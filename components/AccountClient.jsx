@@ -12,6 +12,24 @@ export default function AccountClient() {
   const [error, setError] = useState(null);
   const [lastSync, setLastSync] = useState(null);
   const [showAllGuilds, setShowAllGuilds] = useState(false);
+  const [openMembersFor, setOpenMembersFor] = useState(null);
+  const [membersCache, setMembersCache] = useState({}); // guildId -> { loading, error, members }
+
+  const toggleMembers = async (guildId) => {
+    if (openMembersFor === guildId) { setOpenMembersFor(null); return; }
+    setOpenMembersFor(guildId);
+    if (membersCache[guildId]) return; // déjà chargé
+
+    setMembersCache((c) => ({ ...c, [guildId]: { loading: true, error: null, members: [] } }));
+    try {
+      const r = await fetch(`/api/account/members/${guildId}`, { cache: 'no-store' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'fetch_failed');
+      setMembersCache((c) => ({ ...c, [guildId]: { loading: false, error: null, members: data.members || [] } }));
+    } catch (err) {
+      setMembersCache((c) => ({ ...c, [guildId]: { loading: false, error: err.message, members: [] } }));
+    }
+  };
 
   const load = () => {
     fetch('/api/account', { cache: 'no-store' })
@@ -220,8 +238,46 @@ export default function AccountClient() {
                 <span className="mono" style={{ fontSize: 11, color: 'var(--text-faint)' }}>
                   {g.weeklyBumps} bump{g.weeklyBumps !== 1 ? 's' : ''} cette semaine
                 </span>
-                <a className="join-btn" href={`/server/${g.guildId}`}>Voir le serveur →</a>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="filter-chip" style={{ fontSize: 12 }} onClick={() => toggleMembers(g.guildId)}>
+                    {openMembersFor === g.guildId ? 'Masquer les membres' : '👥 Voir les membres'}
+                  </button>
+                  <a className="join-btn" href={`/server/${g.guildId}`}>Voir le serveur →</a>
+                </div>
               </div>
+
+              {openMembersFor === g.guildId && (
+                <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+                  {membersCache[g.guildId]?.loading && (
+                    <div style={{ fontSize: 12.5, color: 'var(--text-faint)' }}>Chargement des membres…</div>
+                  )}
+                  {membersCache[g.guildId]?.error === 'missing_intent' && (
+                    <div style={{ fontSize: 12.5, color: 'var(--text-faint)' }}>
+                      La liste des membres n'est pas disponible pour ce serveur (intent Discord requis non activé côté bot).
+                    </div>
+                  )}
+                  {membersCache[g.guildId]?.error && membersCache[g.guildId]?.error !== 'missing_intent' && (
+                    <div style={{ fontSize: 12.5, color: 'var(--text-faint)' }}>
+                      Impossible de charger les membres pour le moment.
+                    </div>
+                  )}
+                  {membersCache[g.guildId]?.members?.length > 0 && (
+                    <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginBottom: 4 }}>
+                        {membersCache[g.guildId].members.length} membre{membersCache[g.guildId].members.length !== 1 ? 's' : ''}
+                      </div>
+                      {membersCache[g.guildId].members.map((m) => (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="server-avatar" style={{ width: 26, height: 26, fontSize: 10, flexShrink: 0 }}>
+                            {m.avatar ? <img src={m.avatar} alt="" /> : (m.globalName || m.username).slice(0, 2).toUpperCase()}
+                          </div>
+                          <span style={{ fontSize: 13 }}>{m.nickname || m.globalName || m.username}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
