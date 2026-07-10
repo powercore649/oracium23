@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ServerModal from '@/components/ServerModal';
 import LoadingLogo from '@/components/LoadingLogo';
 import { favorites, searchHistory } from '@/lib/utils';
+import { CATEGORIES } from '@/lib/categories';
 
 const SORTS = {
   bumps: (a, b) => b.bumpCount - a.bumpCount,
@@ -63,10 +64,10 @@ export default function DirectoryClient({ initialServers = null, hideBanner = fa
   }, [initialServers]);
 
   const allTags = useMemo(() => {
-    if (!servers) return [];
-    const set = new Set();
-    servers.forEach((s) => (s.tags || []).forEach((t) => set.add(t)));
-    return Array.from(set).slice(0, 14);
+    const real = new Set();
+    (servers || []).forEach((s) => (s.tags || []).forEach((t) => real.add(t)));
+    const extras = Array.from(real).filter((t) => !CATEGORIES.includes(t));
+    return [...CATEGORIES, ...extras];
   }, [servers]);
 
   const filtered = useMemo(() => {
