@@ -7,8 +7,10 @@ const LINKS = [
   { href: '/leaderboard', label: 'Classement' },
   { href: '/trending', label: 'Tendances' },
   { href: '/new', label: 'Nouveaux' },
+  { href: '/decouverte', label: 'Découverte' },
   { href: '/stats', label: 'Statistiques' },
   { href: '/templates', label: 'Templates' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/account', label: 'Mon compte' },
 ];
 
