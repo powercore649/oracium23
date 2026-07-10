@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 
 export const metadata = { title: 'Page introuvable — Bumpify Directory' };
 
@@ -21,10 +22,7 @@ export default function NotFound() {
         </div>
       </header>
 
-      <footer className="footer-pub">
-        <span>Bumpify Directory — alimenté par de vraies données du réseau Bumpify</span>
-        <span className="mono">Bêta 2.1</span>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

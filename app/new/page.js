@@ -3,6 +3,7 @@ import { fetchServers } from '@/lib/bridge';
 import { computeScore, isNew } from '@/lib/utils';
 import DirectoryClient from '@/components/DirectoryClient';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 
 export const revalidate = 60;
 export const metadata = { title: 'Nouveaux serveurs — Bumpify Directory' };
@@ -23,6 +24,7 @@ export default async function NewPage() {
         <p style={{ color:'var(--text-dim)', fontSize:14 }}>Serveurs ajoutés au réseau ces 7 derniers jours.</p>
       </div>
       <DirectoryClient initialServers={newSrvs} hideBanner />
+      <PublicFooter />
     </>
   );
 }

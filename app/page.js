@@ -1,5 +1,6 @@
 import DirectoryClient from '@/components/DirectoryClient';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -29,10 +30,7 @@ export default function DirectoryHome() {
 
       <DirectoryClient />
 
-      <footer className="footer-pub">
-        <span>Bumpify Directory — alimenté par de vraies données du réseau Bumpify</span>
-        <span className="mono">Bêta 2.1</span>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

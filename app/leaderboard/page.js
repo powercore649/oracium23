@@ -3,6 +3,7 @@ import { fetchServers } from '@/lib/bridge';
 import { computeScore, formatNumber, isTrending, isNew } from '@/lib/utils';
 import LeaderboardClient from '@/components/LeaderboardClient';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 
 export const revalidate = 60;
 export const metadata = { title: 'Classement — Bumpify Directory' };
@@ -20,6 +21,7 @@ export default async function LeaderboardPage() {
       <div className="hex-field" />
       <PublicNav current="/leaderboard" />
       <LeaderboardClient servers={ranked} />
+      <PublicFooter />
     </div>
   );
 }

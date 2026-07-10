@@ -1,5 +1,6 @@
 import TemplatesClient from '@/components/TemplatesClient';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 
 export const metadata = {
   title: 'Templates de serveur Discord — Bumpify Directory',
@@ -21,10 +22,7 @@ export default function TemplatesPage() {
 
       <TemplatesClient />
 
-      <footer className="footer-pub">
-        <span>Templates vérifiés manuellement — liste amenée à s'enrichir</span>
-        <span className="mono">Bêta 2.1</span>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

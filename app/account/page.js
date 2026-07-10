@@ -1,5 +1,6 @@
 import AccountClient from '@/components/AccountClient';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 
 export const metadata = { title: 'Mon compte — Bumpify Directory' };
 
@@ -15,6 +16,7 @@ export default function AccountPage() {
         </p>
       </div>
       <AccountClient />
+      <PublicFooter />
     </div>
   );
 }
