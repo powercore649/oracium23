@@ -70,26 +70,47 @@ export default function AccountClient() {
       {/* En-tête profil */}
       <div
         style={{
-          display: 'flex', alignItems: 'center', gap: 18, marginBottom: 28,
-          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-          padding: '20px 24px', flexWrap: 'wrap',
+          marginBottom: 28, borderRadius: 'var(--radius)', overflow: 'hidden',
+          background: 'var(--surface)', border: '1px solid var(--border)',
         }}
       >
-        {session.user?.image && (
-          <img src={session.user.image} alt="" style={{ width: 64, height: 64, borderRadius: '50%', border: '2px solid var(--accent)' }} />
-        )}
-        <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontWeight: 700, fontSize: 22 }}>{session.user?.name}</div>
-          <div className="mono" style={{ fontSize: 12, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-            <span className="live-dot" />
-            {lastSync ? `Synchronisé à ${lastSync.toLocaleTimeString('fr-FR')}` : 'Synchronisation…'}
+        <div
+          style={{
+            height: 120,
+            background: session.user?.bannerUrl
+              ? `url(${session.user.bannerUrl}) center/cover no-repeat`
+              : (session.user?.accentColor || 'var(--accent)'),
+          }}
+        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '0 24px 20px', marginTop: -32, flexWrap: 'wrap' }}>
+          {session.user?.image && (
+            <img
+              src={session.user.image}
+              alt=""
+              style={{ width: 72, height: 72, borderRadius: '50%', border: '4px solid var(--surface)', flexShrink: 0 }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 180, paddingTop: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 22 }}>{session.user?.name}</div>
+            {session.user?.email && (
+              <div style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 2 }}>{session.user.email}</div>
+            )}
+            {session.user?.discordId && (
+              <div className="mono" style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 2 }}>
+                ID Discord : {session.user.discordId}
+              </div>
+            )}
+            <div className="mono" style={{ fontSize: 12, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+              <span className="live-dot" />
+              {lastSync ? `Synchronisé à ${lastSync.toLocaleTimeString('fr-FR')}` : 'Synchronisation…'}
+            </div>
           </div>
+          {totals && (
+            <div style={{ fontSize: 13, color: 'var(--text-dim)', paddingTop: 8 }}>
+              Actif sur <strong style={{ color: 'var(--accent)' }}>{account.guilds.length}</strong> serveur{account.guilds.length > 1 ? 's' : ''} du réseau
+            </div>
+          )}
         </div>
-        {totals && (
-          <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>
-            Actif sur <strong style={{ color: 'var(--accent)' }}>{account.guilds.length}</strong> serveur{account.guilds.length > 1 ? 's' : ''} du réseau
-          </div>
-        )}
       </div>
 
       {error && (
