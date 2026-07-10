@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 
 const LINKS = [
   { href: '/', label: 'Annuaire' },
@@ -9,6 +10,38 @@ const LINKS = [
   { href: '/stats', label: 'Statistiques' },
   { href: '/templates', label: 'Templates' },
 ];
+
+function AuthButton({ compact = false }) {
+  const { data: session, status } = useSession();
+
+  if (status === 'loading') return null;
+
+  if (session) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {session.user?.image && (
+          <img
+            src={session.user.image}
+            alt=""
+            style={{ width: 24, height: 24, borderRadius: '50%' }}
+          />
+        )}
+        {!compact && (
+          <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
+            {session.user?.name}
+          </span>
+        )}
+        <button className="filter-chip" onClick={() => signOut()}>Déconnexion</button>
+      </div>
+    );
+  }
+
+  return (
+    <button className="filter-chip" onClick={() => signIn('discord')}>
+      Se connecter avec Discord
+    </button>
+  );
+}
 
 // Barre de navigation partagée par toutes les pages publiques du site.
 // `current` = le chemin de la page en cours, pour ne pas se relier soi-même.
@@ -31,6 +64,7 @@ export default function PublicNav({ current = '/' }) {
         <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="live-dot" /> Données en direct
         </span>
+        <AuthButton compact />
       </div>
 
       <button
@@ -50,6 +84,7 @@ export default function PublicNav({ current = '/' }) {
           <span className="mono" style={{ fontSize: 12.5, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
             <span className="live-dot" /> Données en direct
           </span>
+          <AuthButton />
         </div>
       )}
     </nav>
