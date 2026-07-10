@@ -3,12 +3,15 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { formatNumber } from '@/lib/utils';
+import ReportModal from '@/components/ReportModal';
+import RatingBadge from '@/components/RatingBadge';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function LeaderboardClient({ servers }) {
   const router = useRouter();
   const [filter, setFilter] = useState('score');
+  const [reportGuildId, setReportGuildId] = useState(null);
 
   const sorted = [...servers].sort((a, b) => {
     if (filter === 'members') return (b.memberCount || 0) - (a.memberCount || 0);
@@ -81,7 +84,18 @@ export default function LeaderboardClient({ servers }) {
                       <span key={t} style={{ fontSize: 11, padding: '1px 7px', borderRadius: 999, background: 'var(--surface-3)', color: 'var(--text-dim)' }}>{t}</span>
                     ))}
                   </div>
+                  <RatingBadge averageRating={server.averageRating} reviewCount={server.reviewCount} size={11} />
                 </div>
+
+                {/* Signaler */}
+                <button
+                  className="filter-chip"
+                  style={{ padding: '3px 9px', fontSize: 11.5, flexShrink: 0 }}
+                  title="Signaler ce serveur"
+                  onClick={(e) => { e.stopPropagation(); setReportGuildId(server.guildId); }}
+                >
+                  🚩
+                </button>
 
                 {/* Score */}
                 <div className="lb-score">
@@ -111,6 +125,8 @@ export default function LeaderboardClient({ servers }) {
           )}
         </div>
       </div>
+
+      {reportGuildId && <ReportModal guildId={reportGuildId} onClose={() => setReportGuildId(null)} />}
     </main>
   );
 }

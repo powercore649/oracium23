@@ -4,6 +4,8 @@ import ServerModal from '@/components/ServerModal';
 import LoadingLogo from '@/components/LoadingLogo';
 import { favorites, searchHistory } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/categories';
+import ReportModal from '@/components/ReportModal';
+import RatingBadge from '@/components/RatingBadge';
 
 const SORTS = {
   bumps: (a, b) => b.bumpCount - a.bumpCount,
@@ -28,6 +30,7 @@ export default function DirectoryClient({ initialServers = null, hideBanner = fa
   const [favIds, setFavIds] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
+  const [reportGuildId, setReportGuildId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const selectedServer = useMemo(
     () => (servers || []).find((s) => s.guildId === selectedId) || null,
@@ -170,6 +173,7 @@ export default function DirectoryClient({ initialServers = null, hideBanner = fa
               <div>
                 <div className="server-name">{s.name}</div>
                 <div className="server-meta">{s.memberCount ?? '—'} membres · {s.presenceCount ?? '—'} en ligne</div>
+                <RatingBadge averageRating={s.averageRating} reviewCount={s.reviewCount} />
               </div>
               <button
                 className="filter-chip"
@@ -188,15 +192,26 @@ export default function DirectoryClient({ initialServers = null, hideBanner = fa
             )}
             <div className="server-footer">
               <span className="bump-badge"><span className="live-dot" /> {s.bumpCount} bumps</span>
-              {s.inviteLink && (
-                <a className="join-btn" href={s.inviteLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Rejoindre</a>
-              )}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  className="filter-chip"
+                  style={{ padding: '3px 9px', fontSize: 11.5 }}
+                  title="Signaler ce serveur"
+                  onClick={(e) => { e.stopPropagation(); setReportGuildId(s.guildId); }}
+                >
+                  🚩
+                </button>
+                {s.inviteLink && (
+                  <a className="join-btn" href={s.inviteLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Rejoindre</a>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       <ServerModal server={selectedServer} onClose={() => setSelectedId(null)} />
+      {reportGuildId && <ReportModal guildId={reportGuildId} onClose={() => setReportGuildId(null)} />}
     </div>
   );
 }
